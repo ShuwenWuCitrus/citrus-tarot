@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 
 interface Card {
   name: string;
@@ -46,6 +47,15 @@ const DailyTarotCard = () => {
           <h2 className="text-2xl font-semibold mb-2">
             {dailyCard.name} {isReversed ? "(Reversed)" : ""}
           </h2>
+          <div className={`mb-4 ${isReversed ? "transform rotate-180" : ""}`}>
+            <Image
+              src={`/imgs/tarot_cards/${dailyCard.name_short}.jpg`}
+              alt={dailyCard.name}
+              width={200}
+              height={350}
+              className="mx-auto"
+            />
+          </div>
           <p className="text-gray-700 mb-4">{dailyCard.desc}</p>
           <h3 className="text-xl font-semibold mb-2">Meaning</h3>
           <p className="text-gray-600 mb-4">

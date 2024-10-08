@@ -54,15 +54,33 @@ const DailyTarotCard = () => {
     );
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `Given the tarot card "${card.name}" ${
+    const prompt = `Based on the tarot card "${card.name}" ${
       isReversed ? "(Reversed)" : ""
-    }, provide a brief suggestion for the day. Consider the card's meaning: ${
+    }, provide a concise daily suggestion in 2-3 sentences. Consider the card's meaning: ${
       isReversed ? card.meaning_rev : card.meaning_up
-    }`;
+    }. Start directly with the advice, without any introductory phrases or headings.`;
 
     try {
       const result = await model.generateContent(prompt);
-      setSuggestion(result.response.text());
+      let generatedText = result.response.text();
+
+      // Remove any common prefixes that might appear
+      const prefixesToRemove = [
+        "Daily suggestion:",
+        "Suggestion of the day:",
+        "Here's your daily suggestion:",
+        "Daily advice:",
+        "Advice for today:",
+      ];
+
+      for (const prefix of prefixesToRemove) {
+        if (generatedText.toLowerCase().startsWith(prefix.toLowerCase())) {
+          generatedText = generatedText.slice(prefix.length).trim();
+          break;
+        }
+      }
+
+      setSuggestion(generatedText);
     } catch (error) {
       console.error("Error generating suggestion:", error);
       setSuggestion("Unable to generate a suggestion at this time.");

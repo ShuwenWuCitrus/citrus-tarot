@@ -167,7 +167,7 @@ const DailyTarotCard = () => {
 
 export default function TarotPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
+    <main className="flex items-center justify-center p-4">
       <DailyTarotCard />
     </main>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
@@ -18,12 +18,25 @@ interface ApiResponse {
   cards: Card[];
 }
 
+interface CardHistory {
+  name: string;
+  isReversed: boolean;
+  suggestion: string;
+  date: string;
+}
+
 const DailyTarotCard = () => {
   const [dailyCard, setDailyCard] = useState<Card | null>(null);
   const [isReversed, setIsReversed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<string>("");
   const [showFullDesc, setShowFullDesc] = useState(false);
+  const [cardHistory, setCardHistory] = useState<CardHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    getCardHistory();
+  }, []);
 
   const truncateDescription = (text: string, maxLength: number) => {
     if (text.length <= maxLength) return text;
@@ -41,6 +54,7 @@ const DailyTarotCard = () => {
       setDailyCard(data.cards[0]);
       setIsReversed(newIsReversed);
       await getSuggestion(data.cards[0], newIsReversed);
+      saveCardHistory(data.cards[0], newIsReversed, suggestion);
     } catch (error) {
       console.error("Error fetching card:", error);
     } finally {
@@ -84,6 +98,29 @@ const DailyTarotCard = () => {
     } catch (error) {
       console.error("Error generating suggestion:", error);
       setSuggestion("Unable to generate a suggestion at this time.");
+    }
+  };
+
+  const saveCardHistory = (
+    card: Card,
+    isReversed: boolean,
+    suggestion: string
+  ) => {
+    const newCardEntry: CardHistory = {
+      name: card.name,
+      isReversed,
+      suggestion,
+      date: new Date().toLocaleString(),
+    };
+    const updatedHistory = [newCardEntry, ...cardHistory].slice(0, 10); // Keep only the last 10 entries
+    setCardHistory(updatedHistory);
+    localStorage.setItem("cardHistory", JSON.stringify(updatedHistory));
+  };
+
+  const getCardHistory = () => {
+    const storedHistory = localStorage.getItem("cardHistory");
+    if (storedHistory) {
+      setCardHistory(JSON.parse(storedHistory));
     }
   };
 
@@ -155,12 +192,40 @@ const DailyTarotCard = () => {
       <div className="mt-8 text-center">
         <button
           onClick={getRandomCard}
-          className="px-6 py-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+          className="px-6 py-3 bg-purple-600 text-white rounded-full hover:bg-purple-700 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 mr-4"
           disabled={isLoading}
         >
           Draw Card
         </button>
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="px-6 py-3 bg-purple-300 text-purple-800 rounded-full hover:bg-purple-400 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+        >
+          {showHistory ? "Hide History" : "View History"}
+        </button>
       </div>
+      {showHistory && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold mb-4 text-purple-800">
+            Card History
+          </h2>
+          {cardHistory.length > 0 ? (
+            <ul className="space-y-4">
+              {cardHistory.map((entry, index) => (
+                <li key={index} className="border-b pb-4">
+                  <p className="font-semibold">
+                    {entry.name} {entry.isReversed ? "(Reversed)" : ""}
+                  </p>
+                  <p className="text-sm text-gray-600">{entry.date}</p>
+                  <p className="mt-2">{entry.suggestion}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No card history available.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
